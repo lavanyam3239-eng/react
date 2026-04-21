@@ -1,21 +1,25 @@
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchProducts } from "../features/productSlice";
+import { useEffect, useState } from "react";
+import axios from "axios";
 
-function ProductList() {
-  const dispatch = useDispatch();
-  const { products, loading } = useSelector((state) => state.product);
+export default function ProductList() {
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
-
-  if (loading) return <p>Loading...</p>;
+    axios.get("http://localhost:8081/products")
+      .then(res => {
+        console.log("DATA 👉", res.data);
+        setProducts(res.data);
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   return (
     <div>
-      <h2>Products</h2>
-      <table border="1">
+      <h2>Product List</h2>
+
+      <p>Total Products: {products.length}</p>
+
+      <table border="1" cellPadding="10">
         <thead>
           <tr>
             <th>ID</th>
@@ -24,6 +28,7 @@ function ProductList() {
             <th>Stock</th>
           </tr>
         </thead>
+
         <tbody>
           {products.map((p) => (
             <tr key={p.id}>
@@ -38,5 +43,3 @@ function ProductList() {
     </div>
   );
 }
-
-export default ProductList;
