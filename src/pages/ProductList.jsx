@@ -6,7 +6,7 @@ import axios from "axios";
 export default function ProductList() {
   const dispatch = useDispatch();
 
-  // 🔥 Get data from Redux
+  // 🔥 Redux data
   const { items: products = [], loading, error, totalPages } =
     useSelector((state) => state.products);
 
@@ -18,12 +18,12 @@ export default function ProductList() {
   const [page, setPage] = useState(0);
   const size = 5;
 
-  // 🔥 Fetch data from backend
+  // 🔥 Fetch products
   useEffect(() => {
     dispatch(fetchProducts({ page, size }));
   }, [dispatch, page]);
 
-  // 🔥 Filter + Search (optimized)
+  // 🔥 Search + Filter
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch = p.name
@@ -37,15 +37,29 @@ export default function ProductList() {
     });
   }, [products, search, maxPrice]);
 
-  // 🛒 Add to Cart
+  // 🛒 ADD TO CART
   const addToCart = async (productId) => {
     try {
-      await axios.post("http://localhost:8082/cart", {
-        productId,
+      let cartId = localStorage.getItem("cartId");
+
+      // 🔥 Create cart if not exists
+      if (!cartId) {
+        const res = await axios.post("http://localhost:8082/cart");
+        cartId = res.data.id;
+        localStorage.setItem("cartId", cartId);
+      }
+
+      // 🔥 Add item
+      await axios.post("http://localhost:8082/cart/add-item", {
+        cartId: Number(cartId),
+        productId: Number(productId),
         quantity: 1
       });
+
       alert("Added to Cart ✅");
+
     } catch (err) {
+      console.error("ERROR:", err.response?.data || err.message);
       alert("Cart failed ❌");
     }
   };
@@ -93,19 +107,33 @@ export default function ProductList() {
             </thead>
 
             <tbody>
-              {filteredProducts.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.id}</td>
-                  <td>{p.name}</td>
-                  <td>{p.price}</td>
-                  <td>{p.stock}</td>
-                  <td>
-                    <button onClick={() => addToCart(p.id)}>
-                      Add to Cart
-                    </button>
-                  </td>
+              {filteredProducts.length > 0 ? (
+                filteredProducts.map((p) => (
+                  <tr key={p.id}>
+                    <td>{p.id}</td>
+                    <td>{p.name}</td>
+                    <td>{p.price}</td>
+                    <td>{p.stock}</td>
+                    <td>
+                      <button
+                        onClick={() => addToCart(p.id)}
+                        disabled={p.stock === 0}
+                        style={{
+                          backgroundColor: p.stock === 0 ? "gray" : "#007bff",
+                          color: "white",
+                          cursor: p.stock === 0 ? "not-allowed" : "pointer"
+                        }}
+                      >
+                        {p.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5">No products found</td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
 

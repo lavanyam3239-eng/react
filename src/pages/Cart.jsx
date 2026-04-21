@@ -2,33 +2,51 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 
 export default function Cart() {
-  const [items, setItems] = useState([]);
+  const [cart, setCart] = useState(null);
 
   useEffect(() => {
-    axios.get("http://localhost:8082/cart")
-      .then(res => setItems(res.data))
-      .catch(err => console.error(err));
+    const cartId = localStorage.getItem("cartId");
+
+    // ❗ If no cart yet
+    if (!cartId) {
+      console.log("No cart found");
+      return;
+    }
+
+    // ✅ CORRECT API
+    axios
+      .get(`http://localhost:8082/cart/${cartId}`)
+      .then((res) => {
+        setCart(res.data);
+      })
+      .catch((err) => {
+        console.error("Error loading cart:", err);
+      });
   }, []);
+
+  if (!cart) return <p>No Cart Found 🛒</p>;
 
   return (
     <div>
-      <h2>Cart Items</h2>
+      <h2>Cart Page</h2>
 
-      <table border="1">
+      <h3>Cart ID: {cart.id}</h3>
+
+      <table border="1" cellPadding="10">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>Item ID</th>
             <th>Product ID</th>
             <th>Quantity</th>
           </tr>
         </thead>
 
         <tbody>
-          {items.map(i => (
-            <tr key={i.id}>
-              <td>{i.id}</td>
-              <td>{i.productId}</td>
-              <td>{i.quantity}</td>
+          {cart.items?.map((item) => (
+            <tr key={item.id}>
+              <td>{item.id}</td>
+              <td>{item.productId}</td>
+              <td>{item.quantity}</td>
             </tr>
           ))}
         </tbody>
