@@ -1,70 +1,45 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { getProducts, createProduct } from "../services/productService";
+import axios from "axios";
 
-// 🔹 Fetch products
+const API_URL = "http://localhost:8081/products";
+
+// 🔥 Fetch Products
 export const fetchProducts = createAsyncThunk(
-  "product/fetchProducts",
-  async (_, { rejectWithValue }) => {
-    try {
-      const res = await getProducts();
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
-    }
+  "products/fetchProducts",
+  async () => {
+    const response = await axios.get(API_URL);
+    return response.data;
   }
 );
 
-// 🔹 Add product
+// 🔥 Add Product
 export const addProduct = createAsyncThunk(
-  "product/addProduct",
-  async (product, { rejectWithValue }) => {
-    try {
-      const res = await createProduct(product);
-      return res.data;
-    } catch (err) {
-      return rejectWithValue(err.response?.data || err.message);
-    }
+  "products/addProduct",
+  async (product) => {
+    const response = await axios.post(API_URL, product);
+    return response.data;
   }
 );
 
 const productSlice = createSlice({
-  name: "product",
+  name: "products",
   initialState: {
-    products: [],
-    loading: false,
-    error: null,
+    items: [],
+    status: "idle"
   },
   reducers: {},
-
   extraReducers: (builder) => {
     builder
-      // 🔹 Fetch Products
-      .addCase(fetchProducts.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+      // fetch
       .addCase(fetchProducts.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products = action.payload;
+        state.items = action.payload;
+        state.status = "success";
       })
-      .addCase(fetchProducts.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
-      })
-
-      // 🔹 Add Product
-      .addCase(addProduct.pending, (state) => {
-        state.loading = true;
-      })
+      // add
       .addCase(addProduct.fulfilled, (state, action) => {
-        state.loading = false;
-        state.products.push(action.payload);
-      })
-      .addCase(addProduct.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+        state.items.push(action.payload);
       });
-  },
+  }
 });
 
 export default productSlice.reducer;

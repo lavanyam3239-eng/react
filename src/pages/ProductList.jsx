@@ -1,23 +1,18 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchProducts } from "../features/productSlice";
 
 export default function ProductList() {
-  const [products, setProducts] = useState([]);
+  const dispatch = useDispatch();
+  const products = useSelector(state => state.products.items);
 
   useEffect(() => {
-    axios.get("http://localhost:8081/products")
-      .then(res => {
-        console.log("DATA 👉", res.data);
-        setProducts(res.data);
-      })
-      .catch(err => console.error(err));
-  }, []);
+    dispatch(fetchProducts());
+  }, [dispatch]);
 
   return (
     <div>
       <h2>Product List</h2>
-
-      <p>Total Products: {products.length}</p>
 
       <table border="1" cellPadding="10">
         <thead>
@@ -30,7 +25,7 @@ export default function ProductList() {
         </thead>
 
         <tbody>
-          {products.map((p) => (
+          {products.map(p => (
             <tr key={p.id}>
               <td>{p.id}</td>
               <td>{p.name}</td>

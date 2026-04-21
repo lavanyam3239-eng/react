@@ -1,5 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
+import { useDispatch } from "react-redux";
+import { addProduct } from "../features/productSlice";
 import { useNavigate } from "react-router-dom";
 
 export default function AddProduct() {
@@ -9,6 +10,7 @@ export default function AddProduct() {
     stock: ""
   });
 
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -19,39 +21,22 @@ export default function AddProduct() {
   };
 
   const saveProduct = () => {
-    axios.post("http://localhost:8081/products", product)
-      .then(() => {
-        alert("Product Added ✅");
-        navigate("/products"); // redirect to list
-      })
-      .catch(err => console.error(err));
+    dispatch(addProduct(product));
+    alert("Product Added ✅");
+    navigate("/products");
   };
 
   return (
     <div>
       <h2>Add Product</h2>
 
-      <input
-        name="name"
-        placeholder="Name"
-        onChange={handleChange}
-      />
+      <input name="name" placeholder="Name" onChange={handleChange} />
       <br /><br />
 
-      <input
-        name="price"
-        placeholder="Price"
-        type="number"
-        onChange={handleChange}
-      />
+      <input name="price" type="number" placeholder="Price" onChange={handleChange} />
       <br /><br />
 
-      <input
-        name="stock"
-        placeholder="Stock"
-        type="number"
-        onChange={handleChange}
-      />
+      <input name="stock" type="number" placeholder="Stock" onChange={handleChange} />
       <br /><br />
 
       <button onClick={saveProduct}>Add Product</button>
