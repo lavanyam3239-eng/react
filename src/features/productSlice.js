@@ -3,12 +3,14 @@ import axios from "axios";
 
 const API_URL = "http://localhost:8081/products";
 
-// 🔥 Fetch Products
+// 🔥 Fetch Products with Pagination
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
-  async (_, { rejectWithValue }) => {
+  async ({ page = 0, size = 5 }, { rejectWithValue }) => {
     try {
-      const res = await axios.get(API_URL);
+      const res = await axios.get(
+        `${API_URL}?page=${page}&size=${size}`
+      );
       return res.data;
     } catch (error) {
       return rejectWithValue("Failed to fetch products ❌");
@@ -34,7 +36,9 @@ const productSlice = createSlice({
   initialState: {
     items: [],
     loading: false,
-    error: null
+    error: null,
+    totalPages: 0,     // 🔥 NEW
+    currentPage: 0     // 🔥 NEW
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -49,7 +53,11 @@ const productSlice = createSlice({
       // ✅ FETCH SUCCESS
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload;
+
+        // 🔥 IMPORTANT FIX
+        state.items = action.payload.content;
+        state.totalPages = action.payload.totalPages;
+        state.currentPage = action.payload.number;
       })
 
       // ❌ FETCH ERROR

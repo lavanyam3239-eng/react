@@ -6,18 +6,24 @@ import axios from "axios";
 export default function ProductList() {
   const dispatch = useDispatch();
 
-  const { items: products = [], loading, error } = useSelector(
-    (state) => state.products
-  );
+  // 🔥 Get data from Redux
+  const { items: products = [], loading, error, totalPages } =
+    useSelector((state) => state.products);
 
+  // 🔍 Search & Filter
   const [search, setSearch] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
 
-  useEffect(() => {
-    dispatch(fetchProducts());
-  }, [dispatch]);
+  // 🔥 Pagination
+  const [page, setPage] = useState(0);
+  const size = 5;
 
-  // 🔥 useMemo for optimized filtering
+  // 🔥 Fetch data from backend
+  useEffect(() => {
+    dispatch(fetchProducts({ page, size }));
+  }, [dispatch, page]);
+
+  // 🔥 Filter + Search (optimized)
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch = p.name
@@ -31,6 +37,7 @@ export default function ProductList() {
     });
   }, [products, search, maxPrice]);
 
+  // 🛒 Add to Cart
   const addToCart = async (productId) => {
     try {
       await axios.post("http://localhost:8082/cart", {
@@ -73,33 +80,62 @@ export default function ProductList() {
 
       {/* ✅ TABLE */}
       {!loading && !error && (
-        <table border="1" cellPadding="10">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Stock</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {filteredProducts.map((p) => (
-              <tr key={p.id}>
-                <td>{p.id}</td>
-                <td>{p.name}</td>
-                <td>{p.price}</td>
-                <td>{p.stock}</td>
-                <td>
-                  <button onClick={() => addToCart(p.id)}>
-                    Add to Cart
-                  </button>
-                </td>
+        <>
+          <table border="1" cellPadding="10">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Action</th>
               </tr>
+            </thead>
+
+            <tbody>
+              {filteredProducts.map((p) => (
+                <tr key={p.id}>
+                  <td>{p.id}</td>
+                  <td>{p.name}</td>
+                  <td>{p.price}</td>
+                  <td>{p.stock}</td>
+                  <td>
+                    <button onClick={() => addToCart(p.id)}>
+                      Add to Cart
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* 🔥 PAGINATION */}
+          <div style={{ marginTop: "20px" }}>
+            <button onClick={() => setPage(page - 1)} disabled={page === 0}>
+              Prev
+            </button>
+
+            {Array.from({ length: totalPages }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => setPage(i)}
+                style={{
+                  margin: "0 5px",
+                  fontWeight: page === i ? "bold" : "normal"
+                }}
+              >
+                {i + 1}
+              </button>
             ))}
-          </tbody>
-        </table>
+
+            <button
+              onClick={() => setPage(page + 1)}
+              disabled={page === totalPages - 1}
+            >
+              Next
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
