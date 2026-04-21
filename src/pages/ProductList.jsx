@@ -1,29 +1,21 @@
-import { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { fetchProducts } from "../features/productSlice";
-import axios from "axios";
+import { useMemo, useState } from "react";
+import { useProducts } from "../hooks/useProducts";
+import { useCart } from "../hooks/useCart";
 
 export default function ProductList() {
-  const dispatch = useDispatch();
-
-  // 🔥 Redux data
-  const { items: products = [], loading, error, totalPages } =
-    useSelector((state) => state.products);
-
-  // 🔍 Search & Filter
   const [search, setSearch] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
 
-  // 🔥 Pagination
   const [page, setPage] = useState(0);
   const size = 5;
 
-  // 🔥 Fetch products
-  useEffect(() => {
-    dispatch(fetchProducts({ page, size }));
-  }, [dispatch, page]);
+  // 🔥 clean hooks
+  const { products, loading, error, totalPages } =
+    useProducts(page, size);
 
-  // 🔥 Search + Filter
+  const { addToCart } = useCart();
+
+  // 🔥 filter logic
   const filteredProducts = useMemo(() => {
     return products.filter((p) => {
       const matchesSearch = p.name
@@ -37,38 +29,10 @@ export default function ProductList() {
     });
   }, [products, search, maxPrice]);
 
-  // 🛒 ADD TO CART
-  const addToCart = async (productId) => {
-    try {
-      let cartId = localStorage.getItem("cartId");
-
-      // 🔥 Create cart if not exists
-      if (!cartId) {
-        const res = await axios.post("http://localhost:8082/cart");
-        cartId = res.data.id;
-        localStorage.setItem("cartId", cartId);
-      }
-
-      // 🔥 Add item
-      await axios.post("http://localhost:8082/cart/add-item", {
-        cartId: Number(cartId),
-        productId: Number(productId),
-        quantity: 1
-      });
-
-      alert("Added to Cart ✅");
-
-    } catch (err) {
-      console.error("ERROR:", err.response?.data || err.message);
-      alert("Cart failed ❌");
-    }
-  };
-
   return (
     <div>
       <h2>Product List</h2>
 
-      {/* 🔍 SEARCH */}
       <input
         type="text"
         placeholder="Search by name..."
@@ -76,7 +40,6 @@ export default function ProductList() {
         onChange={(e) => setSearch(e.target.value)}
       />
 
-      {/* 💰 FILTER */}
       <input
         type="number"
         placeholder="Max Price"
@@ -86,13 +49,9 @@ export default function ProductList() {
 
       <br /><br />
 
-      {/* 🔄 LOADING */}
       {loading && <p>Loading... ⏳</p>}
-
-      {/* ❌ ERROR */}
       {error && <p style={{ color: "red" }}>{error}</p>}
 
-      {/* ✅ TABLE */}
       {!loading && !error && (
         <>
           <table border="1" cellPadding="10">
@@ -118,13 +77,10 @@ export default function ProductList() {
                       <button
                         onClick={() => addToCart(p.id)}
                         disabled={p.stock === 0}
-                        style={{
-                          backgroundColor: p.stock === 0 ? "gray" : "#007bff",
-                          color: "white",
-                          cursor: p.stock === 0 ? "not-allowed" : "pointer"
-                        }}
                       >
-                        {p.stock === 0 ? "Out of Stock" : "Add to Cart"}
+                        {p.stock === 0
+                          ? "Out of Stock"
+                          : "Add to Cart"}
                       </button>
                     </td>
                   </tr>
@@ -137,21 +93,13 @@ export default function ProductList() {
             </tbody>
           </table>
 
-          {/* 🔥 PAGINATION */}
           <div style={{ marginTop: "20px" }}>
             <button onClick={() => setPage(page - 1)} disabled={page === 0}>
               Prev
             </button>
 
             {Array.from({ length: totalPages }, (_, i) => (
-              <button
-                key={i}
-                onClick={() => setPage(i)}
-                style={{
-                  margin: "0 5px",
-                  fontWeight: page === i ? "bold" : "normal"
-                }}
-              >
+              <button key={i} onClick={() => setPage(i)}>
                 {i + 1}
               </button>
             ))}

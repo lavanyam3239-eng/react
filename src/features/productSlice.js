@@ -1,44 +1,39 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import axios from "axios";
+import { getProducts, createProduct } from "../services/productService";
 
-const API_URL = "http://localhost:8081/products";
-
-// 🔥 Fetch Products with Pagination
+// 🔥 FETCH PRODUCTS
 export const fetchProducts = createAsyncThunk(
   "products/fetchProducts",
-  async ({ page = 0, size = 5 }, { rejectWithValue }) => {
+  async ({ page, size }, { rejectWithValue }) => {
     try {
-      const res = await axios.get(
-        `${API_URL}?page=${page}&size=${size}`
-      );
-      return res.data;
+      return await getProducts(page, size);
     } catch (error) {
       return rejectWithValue("Failed to fetch products ❌");
     }
   }
 );
 
-// 🔥 Add Product
+// 🔥 ADD PRODUCT
 export const addProduct = createAsyncThunk(
   "products/addProduct",
   async (product, { rejectWithValue }) => {
     try {
-      const res = await axios.post(API_URL, product);
-      return res.data;
+      return await createProduct(product);
     } catch (error) {
       return rejectWithValue("Failed to add product ❌");
     }
   }
 );
 
+// 🔥 SLICE
 const productSlice = createSlice({
   name: "products",
   initialState: {
     items: [],
     loading: false,
     error: null,
-    totalPages: 0,     // 🔥 NEW
-    currentPage: 0     // 🔥 NEW
+    totalPages: 0,
+    currentPage: 0
   },
   reducers: {},
   extraReducers: (builder) => {
@@ -53,11 +48,9 @@ const productSlice = createSlice({
       // ✅ FETCH SUCCESS
       .addCase(fetchProducts.fulfilled, (state, action) => {
         state.loading = false;
-
-        // 🔥 IMPORTANT FIX
-        state.items = action.payload.content;
-        state.totalPages = action.payload.totalPages;
-        state.currentPage = action.payload.number;
+        state.items = action.payload.content || [];
+        state.totalPages = action.payload.totalPages || 0;
+        state.currentPage = action.payload.number || 0;
       })
 
       // ❌ FETCH ERROR
@@ -74,7 +67,7 @@ const productSlice = createSlice({
       // ✅ ADD SUCCESS
       .addCase(addProduct.fulfilled, (state, action) => {
         state.loading = false;
-        state.items.push(action.payload);
+        state.items.unshift(action.payload); // add new product at top
       })
 
       // ❌ ADD ERROR
@@ -85,4 +78,5 @@ const productSlice = createSlice({
   }
 });
 
+// 🔥 VERY IMPORTANT (FIX YOUR ERROR)
 export default productSlice.reducer;
